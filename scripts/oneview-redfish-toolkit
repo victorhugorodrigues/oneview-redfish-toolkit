@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+import os
+import appdirs
+import getpass
+import pkg_resources
+import configobj
+import shutil
+import oneview_redfish_toolkit.app
+
+ENCODING='utf-8'
+CFG_DIR_NAME = 'oneview-redfish-toolkit'
+REDFISH_CFG_FILE_NAME = 'redfish.conf'
+LOGGING_CFG_FILE_NAME = 'logging.conf'
+
+def get_config_file_path(file_name):
+    """Read redfish configuration file and return its contents
+    """
+    cfg_dir = appdirs.user_config_dir(CFG_DIR_NAME)
+    cgf_file_path = os.path.join(cfg_dir, file_name)
+
+    if not os.path.isfile(cgf_file_path):
+        create_config_file(cfg_dir, file_name)
+
+    return cgf_file_path
+
+def get_config_file(file_name):
+    """Read configuration file and return its contents
+    """
+    cgf_file_path = get_config_file_path(file_name)
+    config = configobj.ConfigObj(cgf_file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
+    return config
+
+def create_config_file(file_dir, file_name):
+    """Create config file
+    """
+    source = pkg_resources.resource_filename(oneview_redfish_toolkit.__name__, os.path.join('conf', file_name))
+    os.makedirs(name=file_dir, exist_ok=True)
+    shutil.copyfile(source, os.path.join(file_dir, file_name))
+
+def set_redfish_config(file_path, user_settings={}):
+    conf = configobj.ConfigObj(file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
+    conf.merge(user_settings)
+    conf.write()
+
+if __name__ == '__main__':
+    config_logging_path = get_config_file_path(LOGGING_CFG_FILE_NAME)
+
+    config_path = get_config_file_path(REDFISH_CFG_FILE_NAME)
+    config = get_config_file(REDFISH_CFG_FILE_NAME)
+    
+    ov_ip = config['oneview_config']['ip']
+    user = config['credentials']['userName']
+    password = config['credentials']['password']
+
+    settings = {}
+
+    if not ov_ip:
+        ov_ip = str(input('Set Oneview IP: '))
+        settings['oneview_config'] = {}
+        settings['oneview_config']['ip'] =  ov_ip
+
+    if not user:
+        user = str(input('Username: '))
+        settings['credentials'] = {}
+        settings['credentials']['userName'] =  user
+
+    if not password:
+        password = getpass.getpass("Password: ")
+        if 'credentials' not in settings:
+            settings['credentials'] = {}
+        settings['credentials']['password'] =  password
+
+    print('Configuration file saved: "' + config_path + '"')
+
+    set_redfish_config(config_path, settings)
+
+    oneview_redfish_toolkit.app.main(config_path, config_logging_path)
