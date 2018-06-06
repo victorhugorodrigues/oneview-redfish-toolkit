@@ -340,7 +340,8 @@ def main(config_file_path, logging_config_file_path):
                 os.path.exists(ssl_key_file):
                 logging.warning("Generating self-signed certs")
                 # Generate certificates
-                util.generate_certificate("certs", "self-signed", 2048)
+                util.generate_certificate(
+                    os.path.dirname(ssl_cert_file), "self-signed", 2048)
             else:
                 logging.warning("Using existing self-signed certs")
 
