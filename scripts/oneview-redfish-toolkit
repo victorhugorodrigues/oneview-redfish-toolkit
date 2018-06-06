@@ -3,7 +3,7 @@
 import os
 import appdirs
 import pkg_resources
-import configobj
+import configparser
 import shutil
 import oneview_redfish_toolkit.app
 
@@ -36,7 +36,9 @@ def get_config_file(file_name):
     """Read configuration file and return its contents
     """
     cgf_file_path = get_config_file_path(file_name)
-    config = configobj.ConfigObj(cgf_file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
+    config = configparser.ConfigParser()
+    config.optionxform = str
+    config.read(cgf_file_path)
     return config
 
 
@@ -46,12 +48,6 @@ def create_config_file(file_dir, file_name):
     source = pkg_resources.resource_filename(oneview_redfish_toolkit.__name__, os.path.join('conf', file_name))
     os.makedirs(name=file_dir, exist_ok=True)
     shutil.copyfile(source, os.path.join(file_dir, file_name))
-
-
-def set_redfish_config(file_path, user_settings={}):
-    conf = configobj.ConfigObj(file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
-    conf.merge(user_settings)
-    conf.write()
 
 
 def get_config_dir_path(dir_name):
@@ -87,30 +83,30 @@ if __name__ == '__main__':
     registry_dir = config['redfish']['registry_dir']
     certs_dir = config['ssl']['SSLCertFile']
 
-    settings = {}
-    settings['oneview_config'] = {}
-    settings['redfish'] = {}
-    settings['ssl'] = {}
+    save_file = not (ov_ip and schema_dir and registry_dir and certs_dir)
 
     if not ov_ip:
         ov_ip = str(input('Set Oneview IP: '))
-        settings['oneview_config']['ip'] =  ov_ip
+        config['oneview_config']['ip'] =  ov_ip
 
     if not schema_dir:
         schemas_dir = get_config_dir_path(SCHEMAS_DIR_NAME)
-        settings['redfish']['schema_dir'] =  schemas_dir
+        config['redfish']['schema_dir'] =  schemas_dir
 
     if not registry_dir:
         registry_dir = get_config_dir_path(REGISTRY_DIR_NAME)
-        settings['redfish']['registry_dir'] =  registry_dir
+        config['redfish']['registry_dir'] =  registry_dir
 
     if not certs_dir:
         certs_dir = get_config_dir_path(CERTS_DIR_NAME)
-        settings['ssl']['SSLCertFile'] =  os.path.join(certs_dir, CERTS_CRT_FILE_NAME)
-        settings['ssl']['SSLKeyFile'] =  os.path.join(certs_dir, CERTS_KEY_FILE_NAME)
+        config['ssl']['SSLCertFile'] =  os.path.join(certs_dir, CERTS_CRT_FILE_NAME)
+        config['ssl']['SSLKeyFile'] =  os.path.join(certs_dir, CERTS_KEY_FILE_NAME)
 
-    print('Configuration file saved: "' + config_path + '"')
-
-    set_redfish_config(config_path, settings)
+    if save_file:
+        with open(config_path, 'w') as configfile:
+            config.write(configfile)
+            print('Configuration file saved: ' + config_path)
+    else:
+        print('Using configuration file: ' + config_path)
 
     oneview_redfish_toolkit.app.main(config_path, config_logging_path)
