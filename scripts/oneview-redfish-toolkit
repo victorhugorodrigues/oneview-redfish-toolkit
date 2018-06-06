@@ -2,7 +2,6 @@
 
 import os
 import appdirs
-import getpass
 import pkg_resources
 import configobj
 import shutil
@@ -12,6 +11,10 @@ ENCODING='utf-8'
 CFG_DIR_NAME = 'oneview-redfish-toolkit'
 REDFISH_CFG_FILE_NAME = 'redfish.conf'
 LOGGING_CFG_FILE_NAME = 'logging.conf'
+
+REGISTRY_CFG_DIR_NAME = 'registry'
+SCHEMAS_CFG_DIR_NAME = 'schemas'
+
 
 def get_config_file_path(file_name):
     """Read redfish configuration file and return its contents
@@ -24,12 +27,14 @@ def get_config_file_path(file_name):
 
     return cgf_file_path
 
+
 def get_config_file(file_name):
     """Read configuration file and return its contents
     """
     cgf_file_path = get_config_file_path(file_name)
     config = configobj.ConfigObj(cgf_file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
     return config
+
 
 def create_config_file(file_dir, file_name):
     """Create config file
@@ -38,10 +43,34 @@ def create_config_file(file_dir, file_name):
     os.makedirs(name=file_dir, exist_ok=True)
     shutil.copyfile(source, os.path.join(file_dir, file_name))
 
+
 def set_redfish_config(file_path, user_settings={}):
     conf = configobj.ConfigObj(file_path, raise_errors=True, encoding=ENCODING, default_encoding=ENCODING)
     conf.merge(user_settings)
     conf.write()
+
+
+def get_config_dir_path(dir_name):
+    """Returns path from the directory name passed as arguments
+    on the user config directory. If the directory not exists
+    will be created copying files from application lib dir.
+    """
+    cfg_dir = appdirs.user_config_dir(CFG_DIR_NAME)
+    cgf_dir_path = os.path.join(cfg_dir, dir_name)
+
+    if not os.path.isdir(cgf_dir_path):
+        create_config_dir(cfg_dir, dir_name)
+
+    return cgf_dir_path
+
+
+def create_config_dir(path_dir, dir_name):
+    """Create config directory copying from application lib
+    """
+    source = pkg_resources.resource_filename(oneview_redfish_toolkit.__name__, dir_name)
+    os.makedirs(name=path_dir, exist_ok=True)
+    shutil.copytree(source, os.path.join(path_dir, dir_name))
+
 
 if __name__ == '__main__':
     config_logging_path = get_config_file_path(LOGGING_CFG_FILE_NAME)
@@ -50,26 +79,24 @@ if __name__ == '__main__':
     config = get_config_file(REDFISH_CFG_FILE_NAME)
     
     ov_ip = config['oneview_config']['ip']
-    user = config['credentials']['userName']
-    password = config['credentials']['password']
+    schema_dir = config['redfish']['schema_dir']
+    registry_dir = config['redfish']['registry_dir']
 
     settings = {}
+    settings['oneview_config'] = {}
+    settings['redfish'] = {}
 
     if not ov_ip:
         ov_ip = str(input('Set Oneview IP: '))
-        settings['oneview_config'] = {}
         settings['oneview_config']['ip'] =  ov_ip
 
-    if not user:
-        user = str(input('Username: '))
-        settings['credentials'] = {}
-        settings['credentials']['userName'] =  user
+    if not schema_dir:
+        schemas_dir = get_config_dir_path(SCHEMAS_CFG_DIR_NAME)
+        settings['redfish']['schema_dir'] =  schemas_dir
 
-    if not password:
-        password = getpass.getpass("Password: ")
-        if 'credentials' not in settings:
-            settings['credentials'] = {}
-        settings['credentials']['password'] =  password
+    if not registry_dir:
+        registry_dir = get_config_dir_path(REGISTRY_CFG_DIR_NAME)
+        settings['redfish']['registry_dir'] =  registry_dir
 
     print('Configuration file saved: "' + config_path + '"')
 

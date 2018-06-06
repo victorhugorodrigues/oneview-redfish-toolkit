@@ -19,7 +19,6 @@ import argparse
 import ipaddress
 import logging
 import os
-import sys
 from threading import Thread
 
 # 3rd party libs
@@ -77,6 +76,7 @@ from oneview_redfish_toolkit.blueprints.subscription_collection \
 from oneview_redfish_toolkit.blueprints.thermal import thermal
 from oneview_redfish_toolkit.blueprints.zone_collection import zone_collection
 from oneview_redfish_toolkit import util
+
 
 def main(config_file_path, logging_config_file_path):
     # Load config file, schemas and creates a OV connection
@@ -353,10 +353,13 @@ def main(config_file_path, logging_config_file_path):
         ssl_context = (ssl_cert_file, ssl_key_file)
         app.run(host=host, port=port, debug=debug, ssl_context=ssl_context)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arguments parser')
-    parser.add_argument('--config', type=str, help='A required path to config file')
-    parser.add_argument('--log-config', type=str, help='A required path to logging config file')
+    parser.add_argument('--config', type=str,
+                        help='A required path to config file')
+    parser.add_argument('--log-config', type=str,
+                        help='A required path to logging config file')
     args = parser.parse_args()
 
     main(args.config, args.log_config)
