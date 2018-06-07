@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import appdirs
 import pkg_resources
@@ -72,9 +73,8 @@ def create_config_dir(path_dir, dir_name):
     shutil.copytree(source, os.path.join(path_dir, dir_name))
 
 
-if __name__ == '__main__':
-    config_logging_path = get_config_file_path(LOGGING_CFG_FILE_NAME)
-
+def get_path_redfish_conf():
+    """Get path for redfish.conf """
     config_path = get_config_file_path(REDFISH_CFG_FILE_NAME)
     config = get_config_file(REDFISH_CFG_FILE_NAME)
     
@@ -106,7 +106,20 @@ if __name__ == '__main__':
         with open(config_path, 'w') as configfile:
             config.write(configfile)
             print('Configuration file saved: ' + config_path)
-    else:
-        print('Using configuration file: ' + config_path)
+
+    return config_path
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Arguments parser')
+    parser.add_argument('--config', type=str,
+                        help='A path to config file')
+    parser.add_argument('--log-config', type=str,
+                        help='A path to logging config file')
+    args = parser.parse_args()
+
+    config_logging_path = args.log_config or get_config_file_path(LOGGING_CFG_FILE_NAME)
+
+    config_path = args.config or get_path_redfish_conf()
+    print('Using configuration file: ' + config_path)
 
     oneview_redfish_toolkit.app.main(config_path, config_logging_path)
