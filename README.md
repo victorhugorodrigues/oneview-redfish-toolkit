@@ -18,7 +18,29 @@ HPE OneView Redfish Toolkit service relies on Python 3.5 or newer (as long as py
 
 In order to run tests and documentation generation `tox` is also needed. General instructions on how to install are available [here](https://tox.readthedocs.io/en/latest/install.html).
 
-### From source
+### Production Environment
+
+Install the application:
+
+```bash
+$ pip install git+https://github.com/HewlettPackard/oneview-redfish-toolkit.git
+```
+
+Run the application:
+
+```bash
+$ oneview-redfish-toolkit
+```
+
+ At first time, it will create all the needed configuration files under user directory, and will prompt for the OneView IP.
+
+You can update the configuration files created under the user directory, or if you want to use custom configuration files you can pass that as arguments:
+
+```bash
+$ oneview-redfish-toolkit --config redfish.conf --log-config logging.conf
+```
+
+### Development Environment
 
 We recommend to run inside a virtual environment. You can create one running:
 
