@@ -449,8 +449,12 @@ def check_oneview_availability(ov_config):
 
     for attempt_counter in range(attempts):
         try:
-            connection = HTTPSConnection(
-                ov_config['ip'], context=ssl._create_unverified_context())
+            context = ssl.create_default_context()
+
+            if ov_config['ssl_ignore_cert'] == "True":
+                context = ssl._create_unverified_context()
+
+            connection = HTTPSConnection(ov_config['ip'], context=context)
 
             connection.request(
                 method='GET', url='/controller-state.json',
